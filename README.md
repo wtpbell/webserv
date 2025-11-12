@@ -134,3 +134,23 @@ Client
 
 </details>```
 ---
+
+## 🔄 Request Lifecycle (Keep-Alive & Chunked Transfer)
+<details>
+<summary>Click to expand</summary>
+```text
+[epoll_wait()]
+  │
+  ├──> Read request
+  │       - If new request
+  │       - Parse headers
+  │       - Detect keep-alive / chunked
+  │
+  ├──> Write response
+  │       - If Content-Length known → normal write
+  │       - Else → chunked encoding
+  │
+  ├──> If keep-alive → reset state
+  │       else → close socket
+
+</details>
