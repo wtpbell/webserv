@@ -105,8 +105,7 @@ A lightweight HTTP server in C++ supporting **static files**, **CGI scripts**, *
 
 ## ⚡ Typical Request Lifecycle
 
-<details>
-<summary>Click to expand</summary>
+<details><summary>Click to expand</summary>
 
 ```text
 Client
@@ -133,11 +132,12 @@ Client
           ↓
         close() when done
 
-</details>
+</details>```
 ---
 
 ### Request Lifecycle (keep connection alive(HTTP1.1, no close) & chunked transfer)
 <details> <summary>Click to expand</summary>
+```text
 [epoll_wait()]
   │
   ├──> Read request
@@ -152,13 +152,13 @@ Client
   ├──> If keep-alive → reset state
   │       else → close socket
 
-</details>
+</details>```
 
 ---
 
 ## ⚙️ Directory Structure
 <details> <summary>Click to expand</summary>
-
+```text
 webserv/
 ├── include/
 │   ├── core/
@@ -203,11 +203,12 @@ webserv/
 │
 ├── Makefile
 └── README.md
-</details>
+</details>```
 ---
 
 ## 🧱 CGI Lifecycle (Non-Blocking)
 <details> <summary>Click to expand</summary>
+```text
 [Client]
   │
   ▼
@@ -241,3 +242,4 @@ Everything stays non-blocking — no waitpid() or read() blocking calls.
 The CGI’s pipe file descriptors are monitored by epoll just like sockets.
 </details> ```
 ---
+
