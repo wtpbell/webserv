@@ -155,7 +155,8 @@ Client
   ├──> If keep-alive → reset state
   │       else → close socket
 
-</details> ```
+</details>
+
 
 
 
