@@ -100,28 +100,28 @@ WAIT_REQUEST → READING_REQUEST → READY → WRITING_RESPONSE → COMPLETE
 ### Typical Request Lifecycle
 
 Client
-  │
-  ▼
+│
+▼
 [epoll_wait()]
-  │
-  ├──> Accept new client (EPOLLIN on listening socket)
-  │
-  ├──> Read request (EPOLLIN)
-  │       ↓
-  │   RequestParser
-  │       ↓
-  │   Route lookup → static file | CGI
-  │
-  ├──> If static:
-  │       read() file → ResponseBuilder → send()
-  │
-  ├──> If CGI:
-  │       CgiHandler forks → pipe()
-  │       collect stdout → ResponseBuilder
-  │
-  └──> Send response (EPOLLOUT)
-          ↓
-        close() when done
+│
+├──> Accept new client (EPOLLIN on listening socket)
+│
+├──> Read request (EPOLLIN)
+│ ↓
+│ RequestParser
+│ ↓
+│ Route lookup → static file | CGI
+│
+├──> If static:
+│ read() file → ResponseBuilder → send()
+│
+├──> If CGI:
+│ CgiHandler forks → pipe()
+│ collect stdout → ResponseBuilder
+│
+└──> Send response (EPOLLOUT)
+↓
+close() when done
 
 
 
@@ -235,3 +235,4 @@ The CGI’s pipe file descriptors are monitored by epoll just like sockets.
 
 
 ---
+
