@@ -33,10 +33,10 @@ The goal of this project is to understand how a real web server like **NGINX** o
 | Webserv                                                 |
 | ------------------------------------------------------- |
 | epoll (event loop)                                      |
-| ├── monitors listening sockets (accept)                 |
-| ├── monitors client sockets (read/write)                |
-| ├── monitors CGI pipes (read/write)                     |
-| -----------------------------------------------------   |
+| - monitors listening sockets (accept)                   |
+| - monitors client sockets (read/write)                  |
+| - monitors CGI pipes (read/write)                       |
+| ------------------------------------------------------- |
 | Core Modules:                                           |
 | - ConfigParser: parse config file                       |
 | - Server: manage listeners and clients                  |
@@ -45,7 +45,7 @@ The goal of this project is to understand how a real web server like **NGINX** o
 | - ResponseBuilder: build HTTP responses                 |
 | - **CgiHandler: execute and monitor CGI**               |
 | - Logger: structured logging                            |
-| +-----------------------------------------------------+ |
+| ------------------------------------------------------- |
 
 
 
@@ -97,57 +97,67 @@ The goal of this project is to understand how a real web server like **NGINX** o
 
 WAIT_REQUEST → READING_REQUEST → READY → WRITING_RESPONSE → COMPLETE
 
-### Typical Request Lifecycle
+# 🌐 Webserv Project Overview
 
-Client
-│
-▼
-[epoll_wait()]
-│
-├──> Accept new client (EPOLLIN on listening socket)
-│
-├──> Read request (EPOLLIN)
-│ ↓
-│ RequestParser
-│ ↓
-│ Route lookup → static file | CGI
-│
-├──> If static:
-│ read() file → ResponseBuilder → send()
-│
-├──> If CGI:
-│ CgiHandler forks → pipe()
-│ collect stdout → ResponseBuilder
-│
-└──> Send response (EPOLLOUT)
-↓
-close() when done
-
-
+A lightweight HTTP server in C++ supporting **static files**, **CGI scripts**, **keep-alive**, and **chunked transfer encoding**.  
 
 ---
 
-### Request Lifecycle (keep connection alive(HTTP1.1, no close) & chunked transfer)
+## ⚡ Typical Request Lifecycle
 
+<details>
+<summary>Click to expand</summary>
+
+```text
+Client
+  │
+  ▼
 [epoll_wait()]
-  |
+  │
+  ├──> Accept new client (EPOLLIN on listening socket)
+  │
+  ├──> Read request (EPOLLIN)
+  │       ↓
+  │   RequestParser
+  │       ↓
+  │   Route lookup → static file | CGI
+  │
+  ├──> If static:
+  │       read() file → ResponseBuilder → send()
+  │
+  ├──> If CGI:
+  │       CgiHandler forks → pipe()
+  │       collect stdout → ResponseBuilder
+  │
+  └──> Send response (EPOLLOUT)
+          ↓
+        close() when done
+
+</details>
+---
+
+### Request Lifecycle (keep connection alive(HTTP1.1, no close) & chunked transfer)
+<details> <summary>Click to expand</summary>
+[epoll_wait()]
+  │
   ├──> Read request
-  |       - If new request
-  |       - Parse headers
-  |       - Detect keep-alive / chunked
-  |
+  │       - If new request
+  │       - Parse headers
+  │       - Detect keep-alive / chunked
+  │
   ├──> Write response
-  |       - If Content-Length known → normal write
-  |       - Else → chunked encoding
-  |
+  │       - If Content-Length known → normal write
+  │       - Else → chunked encoding
+  │
   ├──> If keep-alive → reset state
-  |       else → close socket
+  │       else → close socket
 
-
+</details>
 
 ---
 
 ## ⚙️ Directory Structure
+<details> <summary>Click to expand</summary>
 
 webserv/
 ├── include/
@@ -185,7 +195,7 @@ webserv/
 │   ├── index.html
 │   ├── upload/
 │   └── cgi-bin/
-│   └── test.py
+│       └── test.py
 │
 ├── logs/
 │   ├── access.log
@@ -193,13 +203,11 @@ webserv/
 │
 ├── Makefile
 └── README.md
-
-
-
+</details>
 ---
 
 ## 🧱 CGI Lifecycle (Non-Blocking)
-
+<details> <summary>Click to expand</summary>
 [Client]
   │
   ▼
@@ -231,8 +239,5 @@ Webserv (EPOLLIN)
 
 Everything stays non-blocking — no waitpid() or read() blocking calls.
 The CGI’s pipe file descriptors are monitored by epoll just like sockets.
-
-
-
+</details> ```
 ---
-
