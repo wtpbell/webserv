@@ -133,7 +133,7 @@ Client
           ↓
         close() when done
 
-</details> ```
+</details> 
 ---
 
 
@@ -141,7 +141,6 @@ Client
 <details>
 <summary>Click to expand</summary>
 
-```text
 [epoll_wait()]
   │
   ├──> Read request
@@ -157,6 +156,7 @@ Client
   │       else → close socket
 
 </details> ```
+
 
 
 
