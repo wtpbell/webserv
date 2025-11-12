@@ -104,11 +104,11 @@ A lightweight HTTP server in C++ supporting **static files**, **CGI scripts**, *
 ---
 
 ## ⚡ Typical Request Lifecycle
-```text
+
 <details>
 <summary>Click to expand</summary>
 
-
+```text
 Client
   │
   ▼
@@ -243,4 +243,5 @@ webserv/
 ├── Makefile
 └── README.md
 </details> ```
+
 
