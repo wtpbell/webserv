@@ -107,7 +107,6 @@ A lightweight HTTP server in C++ supporting **static files**, **CGI scripts**, *
 
 <details><summary>Click to expand</summary>
 
-```text
 Client
   │
   ▼
@@ -132,7 +131,7 @@ Client
           ↓
         close() when done
 
-</details>```
+</details>
 ---
 
 ## 🔄 Request Lifecycle (Keep-Alive & Chunked Transfer)
@@ -154,3 +153,4 @@ Client
   │       else → close socket
 
 </details>
+
