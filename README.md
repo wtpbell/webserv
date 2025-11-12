@@ -136,9 +136,11 @@ Client
 </details> ```
 ---
 
+
 ## 🔄 Request Lifecycle (Keep-Alive & Chunked Transfer)
 <details>
 <summary>Click to expand</summary>
+
 ```text
 [epoll_wait()]
   │
@@ -155,5 +157,6 @@ Client
   │       else → close socket
 
 </details> ```
+
 
 
