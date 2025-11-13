@@ -9,24 +9,7 @@ The goal of this project is to understand how a real web server like **NGINX** o
 
 ---
 
-## ✨ Features
-
-- ✅ HTTP/1.1 compliant (GET, POST, DELETE)
-- ✅ Non-blocking I/O using **epoll**
-- ✅ Multiple ports and server blocks via configuration file
-- ✅ Static file serving
-- ✅ File upload (POST)
-- ✅ Custom error pages
-- ✅ Directory listing (optional)
-- ✅ CGI support (e.g., PHP, Python)
-- ✅ Logging system (info, error, access)
-- ✅ Graceful client disconnection handling
-- ✅ Configurable max body size
-- ✅ Fast and resilient under stress
-
----
-
-## 🧠 Architecture Overview
+# 🧠 Architecture Overview
 
 ### 🏗 High-Level Components
 
@@ -37,60 +20,70 @@ The goal of this project is to understand how a real web server like **NGINX** o
 | - monitors client sockets (read/write)                  |
 | - monitors CGI pipes (read/write)                       |
 | ------------------------------------------------------- |
-| Core Modules:                                           |
-| - ConfigParser: parse config file                       |
-| - Server: manage listeners and clients                  |
-| - Connection: track state of each client                |
-| - RequestParser: parse HTTP requests                    |
-| - ResponseBuilder: build HTTP responses                 |
-| - **CgiHandler: execute and monitor CGI**               |
-| - Logger: structured logging                            |
+| Core Modules:                                           |	-> detects new connections, readable/writable sockets, CGI pipe readiness
+| - ConfigParser: parse config file                       | -> loads and interprets the .conf
+| - Server: manage listeners and clients                  | -> creates socket, bind ports, listens & register them with epoll
+| - Connection: track state of each client                | -> tracks the connection’s current state (WAIT_REQUEST → READING → WRITING → COMPLETE).
+| - RequestParser: parse HTTP requests                    | -> Converts raw bytes into a structured Request object, 
+|                                                         |     Parses HTTP method, path, headers, and body (supports chunked encoding)
+| - ResponseBuilder: build HTTP responses                 | -> Builds and serializes the outgoing HTTP response.
+| - CgiHandler: execute and monitor CGI**                 | -> Forks subprocesses, sets environment variables, pipes input/output, and returns script output
+| - Logger: structured logging        enum class ConnectionState { WAIT_REQUEST, READING, PROCESSING, WRITING, COMPLETE };                    | -> Handles logging for debugging and access/error logs
 | ------------------------------------------------------- |
-
-
 
 ---
 
+┌────────────────────────────────────────┐
+│                epoll                   │
+│  monitors all fds:                     │
+│   - listening sockets  (Server)        │
+│   - client sockets     (Connection)    │
+│   - CGI pipes          (CgiHandler)    │
+│                                        │
+│  epoll_wait() returns ready fds →      │
+│  dispatches event to correct handler   │
+└────────────────────────────────────────┘
+
+
 ### 🧩 4. Transition Diagram
 
-        ┌──────────────────┐
-        │  WAIT_REQUEST    │
-        └──────┬───────────┘
-               │ EPOLLIN (data)
-               ▼
-        ┌──────────────────┐
-        │ READING_REQUEST  │
-        └──────┬───────────┘
-               │ request complete
-               ▼
-        ┌──────────────────┐
-        │ PROCESSING       │
-        └──────┬───────────┘
-               │ static file  │ CGI request
-               │              ▼
-               │         ┌──────────────┐
-               │         │ CGI_RUNNING  │
-               │         └──────┬───────┘
-               │ CGI output     │
-               ▼                ▼
-        ┌──────────────────┐  ┌─────────────────┐
-        │ WRITING_RESPONSE │  │ CGI_READING     │
-        └──────┬───────────┘  └──────┬──────────┘
-               │ EPOLLOUT            │ EOF
-               ▼                     ▼
-        ┌──────────────────┐
-        │ COMPLETE         │
-        └──────┬───────────┘
-               │
-         keep-alive?
-           │    │
-           │    ▼
-           │  WAIT_REQUEST
-           │
-           ▼
-         CLOSING
-
-
+```text
+		┌──────────────────┐
+		│  WAIT_REQUEST    │
+		└──────┬───────────┘
+			   │ EPOLLIN (data)
+			   ▼
+		┌──────────────────┐
+		│ READING_REQUEST  │
+		└──────┬───────────┘
+			   │ request complete
+			   ▼
+		┌──────────────────┐
+		│ PROCESSING       │
+		└──────┬───────────┘
+			   │ static website  │ CGI request
+			   │              ▼
+			   │         ┌──────────────┐
+			   │         │ CGI_RUNNING  │
+			   │         └──────┬───────┘
+			   │ CGI output     │
+			   ▼                ▼
+		┌──────────────────┐  ┌─────────────────┐
+		│ WRITING_RESPONSE │  │ CGI_READING     │
+		└──────┬───────────┘  └──────┬──────────┘
+			   │ EPOLLOUT            │ EOF
+			   ▼                     ▼
+		┌──────────────────┐
+		│ COMPLETE         │
+		└──────┬───────────┘
+			   │
+		 keep-alive?
+		   │    │
+		   │    ▼
+		   │  WAIT_REQUEST
+		   │
+		   ▼
+		 CLOSING
 
 ---
 ## 🧩 Internal Data Flow
@@ -120,7 +113,7 @@ Client
   │       ↓
   │   RequestParser
   │       ↓
-  │   Route lookup → static file | CGI
+  │   Route lookup → static website | CGI
   │
   ├──> If static:
   │       read() file → ResponseBuilder → send()
@@ -130,8 +123,8 @@ Client
   │       collect stdout → ResponseBuilder
   │
   └──> Send response (EPOLLOUT)
-          ↓
-        close() when done
+		  ↓
+		close() when done
 
 
 ---
@@ -202,6 +195,9 @@ webserv/
 │
 ├── Makefile
 └── README.md
+
+
+
 </details>
 ---
 
@@ -240,3 +236,19 @@ Everything stays non-blocking — no waitpid() or read() blocking calls.
 The CGI’s pipe file descriptors are monitored by epoll just like sockets.
 </details> ```
 ---
+
+
+## HTTP layer
+
+struct Request
+{
+	std::string method;
+	std::string path;
+	std::map<std::string, std::string> headers;
+	std::string body;
+};
+
+
+![alt text](image.png)
+
+
